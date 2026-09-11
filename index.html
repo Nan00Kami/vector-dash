@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Realm of Blades - 3D Web RPG</title>
+  <title>Chronicles of Aetheria - 3D Action RPG</title>
   <style>
     * {
       box-sizing: border-box;
@@ -16,8 +16,8 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #090a0f;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #07090e;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
     #canvas-container {
       position: absolute;
@@ -27,7 +27,7 @@
       height: 100%;
       z-index: 1;
     }
-    /* UI Overlay */
+    /* HUD Overlays */
     #ui-layer {
       position: absolute;
       top: 0;
@@ -48,122 +48,197 @@
       width: 100%;
     }
     .player-card {
-      background: rgba(18, 22, 36, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(8px);
-      padding: 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      background: rgba(13, 17, 28, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      padding: 16px 22px;
+      border-radius: 14px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
       color: #fff;
-      min-width: 250px;
+      min-width: 260px;
     }
-    .player-title {
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #8fa0c0;
+    .player-name-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 8px;
     }
+    .player-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+    }
+    .level-badge {
+      background: #3b82f6;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
     .bar-container {
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.55);
       border-radius: 8px;
       height: 14px;
       width: 100%;
       overflow: hidden;
       position: relative;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .bar-fill-hp {
-      background: linear-gradient(90deg, #ff3366, #ff6b6b);
+      background: linear-gradient(90deg, #ef4444, #f87171);
       height: 100%;
       width: 100%;
-      transition: width 0.15s ease-out;
+      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .bar-fill-xp {
-      background: linear-gradient(90deg, #38ef7d, #11998e);
+      background: linear-gradient(90deg, #10b981, #34d399);
       height: 100%;
       width: 0%;
-      transition: width 0.2s ease-out;
+      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .stats-row {
       display: flex;
       justify-content: space-between;
-      font-size: 12px;
-      color: #cbd5e1;
+      font-size: 11px;
+      color: #94a3b8;
       font-weight: 600;
     }
-    .quest-card {
-      background: rgba(18, 22, 36, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(8px);
-      padding: 14px 20px;
-      border-radius: 12px;
+    .counter-card {
+      background: rgba(13, 17, 28, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+      padding: 14px 22px;
+      border-radius: 14px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
       color: #f1f5f9;
       font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .counter-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #38bdf8;
     }
     .controls-hint {
-      background: rgba(18, 22, 36, 0.6);
-      backdrop-filter: blur(6px);
+      background: rgba(13, 17, 28, 0.7);
+      backdrop-filter: blur(10px);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      color: #94a3b8;
-      font-size: 12px;
-      padding: 8px 16px;
+      border-radius: 999px;
+      color: #cbd5e1;
+      font-size: 13px;
+      padding: 10px 24px;
       align-self: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
+    .controls-hint kbd {
+      background: rgba(255, 255, 255, 0.12);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: inherit;
+      color: #fff;
+      font-weight: 700;
+    }
+    /* Loading overlay */
+    #loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #090c15;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      transition: opacity 0.5s ease;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Floating Damage Popups */
     .dmg-popup {
       position: absolute;
-      color: #ff3344;
+      color: #f87171;
       font-weight: 900;
-      font-size: 20px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      font-size: 22px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
       pointer-events: none;
-      animation: floatUp 0.8s forwards ease-out;
+      animation: floatUp 0.75s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     @keyframes floatUp {
-      0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
-      20% { transform: translate(-50%, -10px) scale(1.2); opacity: 1; }
-      100% { transform: translate(-50%, -45px) scale(0.9); opacity: 0; }
+      0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+      25% { transform: translate(-50%, -15px) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -50px) scale(0.85); opacity: 0; }
     }
   </style>
-  <!-- Three.js CDN -->
+
+  <!-- Three.js + GLTFLoader CDN scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div style="font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8;">Loading 3D Realm...</div>
+  </div>
+
   <div id="canvas-container"></div>
 
   <div id="ui-layer">
     <div class="hud-top">
       <div class="player-card">
-        <div class="player-title">Hero • Lvl <span id="lvl-display">1</span></div>
+        <div class="player-name-row">
+          <span class="player-title">Paladin</span>
+          <span class="level-badge">LVL <span id="lvl-display">1</span></span>
+        </div>
         <div class="bar-container">
           <div id="hp-bar" class="bar-fill-hp"></div>
         </div>
-        <div class="bar-container" style="height: 8px;">
+        <div class="bar-container" style="height: 6px;">
           <div id="xp-bar" class="bar-fill-xp"></div>
         </div>
         <div class="stats-row">
-          <span>HP: <span id="hp-text">100/100</span></span>
+          <span>HP: <span id="hp-text">120/120</span></span>
           <span>EXP: <span id="xp-text">0/100</span></span>
         </div>
       </div>
-      <div class="quest-card">
-        <div><strong>Slimes Defeated:</strong> <span id="kill-count">0</span></div>
+
+      <div class="counter-card">
+        <span style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Enemies Vanquished</span>
+        <span class="counter-val" id="kill-count">0</span>
       </div>
     </div>
 
     <div class="controls-hint">
-      <strong>[WASD / Arrows]</strong> Move &bull; <strong>[Space / Left Click]</strong> Attack
+      <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> Move &nbsp;&bull;&nbsp; <kbd>Space</kbd> / <kbd>Left-Click</kbd> Attack
     </div>
   </div>
 
   <script>
-    // --- 1. Scene, Camera, Renderer Setup ---
+    // --- 1. Core Scene & Renderer ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0e141f);
-    scene.fog = new THREE.FogExp2(0x0e141f, 0.022);
+    scene.background = new THREE.Color(0x0c111d);
+    scene.fog = new THREE.FogExp2(0x0c111d, 0.02);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -172,199 +247,192 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
 
-    // --- 2. Lighting & Atmosphere ---
-    const hemiLight = new THREE.HemisphereLight(0x7694b8, 0x222831, 0.7);
+    // --- 2. Lighting ---
+    const hemiLight = new THREE.HemisphereLight(0x7dd3fc, 0x1e293b, 0.85);
     scene.add(hemiLight);
 
-    const sun = new THREE.DirectionalLight(0xffecd2, 1.2);
-    sun.position.set(25, 40, 20);
+    const sun = new THREE.DirectionalLight(0xfff7ed, 1.4);
+    sun.position.set(30, 45, 25);
     sun.castShadow = true;
     sun.shadow.mapSize.width = 2048;
     sun.shadow.mapSize.height = 2048;
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 100;
-    const d = 35;
-    sun.shadow.camera.left = -d;
-    sun.shadow.camera.right = d;
-    sun.shadow.camera.top = d;
-    sun.shadow.camera.bottom = -d;
-    sun.shadow.bias = -0.0005;
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 120;
+    const shadowDist = 40;
+    sun.shadow.camera.left = -shadowDist;
+    sun.shadow.camera.right = shadowDist;
+    sun.shadow.camera.top = shadowDist;
+    sun.shadow.camera.bottom = -shadowDist;
+    sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    // --- 3. Environment & Terrain ---
-    const groundGeo = new THREE.PlaneGeometry(160, 160, 48, 48);
+    // --- 3. Ground & Environment Foliage ---
+    const groundGeo = new THREE.PlaneGeometry(180, 180, 40, 40);
     groundGeo.rotateX(-Math.PI / 2);
-    const pos = groundGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const vx = pos.getX(i);
-      const vz = pos.getZ(i);
-      // Subtle terrain undulation away from center spawn
-      const dist = Math.sqrt(vx * vx + vz * vz);
-      if (dist > 8) {
-        pos.setY(i, Math.sin(vx * 0.12) * Math.cos(vz * 0.12) * 0.8);
-      }
-    }
-    groundGeo.computeVertexNormals();
-
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x233827,
-      roughness: 0.85,
-      metalness: 0.05
+      color: 0x1a2e22,
+      roughness: 0.88,
+      metalness: 0.04
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Decorative Forest Props (Trees & Rocks)
-    function createTree(x, z) {
-      const group = new THREE.Group();
-      // Trunk
-      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3d2719, roughness: 0.9 });
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 1.6, 6), trunkMat);
-      trunk.position.y = 0.8;
+    // Stylized Low-Poly Trees
+    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 1.8, 6);
+    const foliageGeo1 = new THREE.ConeGeometry(1.6, 2.2, 6);
+    const foliageGeo2 = new THREE.ConeGeometry(1.2, 1.8, 6);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
+    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.6, flatShading: true });
+
+    function addTree(x, z) {
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+      trunk.position.y = 0.9;
       trunk.castShadow = true;
-      trunk.receiveShadow = true;
-      group.add(trunk);
+      tree.add(trunk);
 
-      // Foliage layers
-      const foliageMat = new THREE.MeshStandardMaterial({ color: 0x1f5c35, roughness: 0.6, flatShading: true });
-      const c1 = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.2, 6), foliageMat);
-      c1.position.y = 2.0;
-      c1.castShadow = true;
-      const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.8, 6), foliageMat);
-      c2.position.y = 3.0;
-      c2.castShadow = true;
-      group.add(c1);
-      group.add(c2);
+      const f1 = new THREE.Mesh(foliageGeo1, foliageMat);
+      f1.position.y = 2.2;
+      f1.castShadow = true;
+      tree.add(f1);
 
-      const s = 0.7 + Math.random() * 0.5;
-      group.scale.set(s, s, s);
-      group.position.set(x, 0, z);
-      scene.add(group);
+      const f2 = new THREE.Mesh(foliageGeo2, foliageMat);
+      f2.position.y = 3.2;
+      f2.castShadow = true;
+      tree.add(f2);
+
+      const scale = 0.75 + Math.random() * 0.55;
+      tree.scale.set(scale, scale, scale);
+      tree.position.set(x, 0, z);
+      scene.add(tree);
     }
 
-    for (let i = 0; i < 65; i++) {
-      const radius = 10 + Math.random() * 60;
+    for (let i = 0; i < 70; i++) {
+      const r = 12 + Math.random() * 65;
       const angle = Math.random() * Math.PI * 2;
-      createTree(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      addTree(Math.cos(angle) * r, Math.sin(angle) * r);
     }
 
-    // --- 4. Hero Character ---
+    // --- 4. Hero Character & Free Model Loading ---
     const player = new THREE.Group();
     scene.add(player);
 
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4 });
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac, roughness: 0.6 });
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.8, roughness: 0.2 });
+    let playerMixer = null;
+    let playerActions = {};
+    let activeAction = null;
 
-    // Torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.45), bodyMat);
-    torso.position.y = 1.1;
-    torso.castShadow = true;
-    player.add(torso);
-
-    // Head
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), skinMat);
-    head.position.y = 1.8;
-    head.castShadow = true;
-    player.add(head);
-
-    // Limbs
-    const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-    const leftArm = new THREE.Mesh(armGeo, skinMat);
-    leftArm.position.set(-0.5, 1.1, 0);
-    leftArm.castShadow = true;
-    player.add(leftArm);
-
-    const rightArm = new THREE.Mesh(armGeo, skinMat);
-    rightArm.position.set(0.5, 1.1, 0);
-    rightArm.castShadow = true;
-    player.add(rightArm);
-
-    const legGeo = new THREE.BoxGeometry(0.26, 0.7, 0.26);
-    const leftLeg = new THREE.Mesh(legGeo, bodyMat);
-    leftLeg.position.set(-0.2, 0.45, 0);
-    leftLeg.castShadow = true;
-    player.add(leftLeg);
-
-    const rightLeg = new THREE.Mesh(legGeo, bodyMat);
-    rightLeg.position.set(0.2, 0.45, 0);
-    rightLeg.castShadow = true;
-    player.add(rightLeg);
-
-    // Weapon (Broadsword)
-    const sword = new THREE.Group();
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.04), metalMat);
-    blade.position.y = 0.45;
-    blade.castShadow = true;
-    const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.08), bodyMat);
-    sword.add(blade);
-    sword.add(hilt);
-    sword.position.set(0.1, -0.25, 0.3);
-    sword.rotation.x = Math.PI / 3;
-    rightArm.add(sword);
-
-    // Attack Slash FX
-    const slashArcGeo = new THREE.RingGeometry(0.7, 1.6, 16, 1, 0, Math.PI * 0.8);
-    const slashMat = new THREE.MeshBasicMaterial({ color: 0x60a5fa, side: THREE.DoubleSide, transparent: true, opacity: 0 });
-    const slashFx = new THREE.Mesh(slashArcGeo, slashMat);
+    // Visual Slash Effect
+    const slashGeo = new THREE.RingGeometry(0.8, 1.7, 24, 1, 0, Math.PI * 0.85);
+    const slashMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0 });
+    const slashFx = new THREE.Mesh(slashGeo, slashMat);
     slashFx.rotation.x = -Math.PI / 2;
-    slashFx.position.set(0, 0.9, 0.6);
+    slashFx.position.set(0, 0.85, 0.75);
     player.add(slashFx);
 
-    // --- 5. Player Stats & State ---
+    const loader = new THREE.GLTFLoader();
+
+    // Fallback procedural hero geometry while remote model loads
+    const fallbackHero = new THREE.Group();
+    const bodyM = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+    bodyM.position.y = 0.9;
+    bodyM.castShadow = true;
+    fallbackHero.add(bodyM);
+    player.add(fallbackHero);
+
+    // Free rigged low-poly character GLB from official three.js examples
+    loader.load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Xbot.glb',
+      (gltf) => {
+        player.remove(fallbackHero);
+        const char = gltf.scene;
+        char.scale.set(0.9, 0.9, 0.9);
+        char.traverse((c) => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = true;
+          }
+        });
+        player.add(char);
+
+        // Setup Animations
+        if (gltf.animations && gltf.animations.length > 0) {
+          playerMixer = new THREE.AnimationMixer(char);
+          gltf.animations.forEach((clip) => {
+            playerActions[clip.name.toLowerCase()] = playerMixer.clipAction(clip);
+          });
+
+          // Default actions fallback
+          const defaultWalk = playerActions['walk'] || playerActions['run'] || Object.values(playerActions)[3];
+          const defaultIdle = playerActions['idle'] || Object.values(playerActions)[0];
+          
+          if (defaultIdle) {
+            defaultIdle.play();
+            activeAction = defaultIdle;
+          }
+        }
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+      },
+      undefined,
+      (err) => {
+        console.warn("Could not load external GLB hero, using procedural geometry fallback.", err);
+        document.getElementById('loader').style.display = 'none';
+      }
+    );
+
+    // --- 5. Game State & Hero Stats ---
     const hero = {
-      hp: 100,
-      maxHp: 100,
+      hp: 120,
+      maxHp: 120,
       level: 1,
       xp: 0,
       xpNeeded: 100,
       kills: 0,
-      speed: 8.5,
-      attackPower: 35,
+      speed: 9.0,
+      attackPower: 40,
       isAttacking: false,
       attackTime: 0
     };
 
-    // --- 6. Enemy Spawner & Logic ---
+    // --- 6. Monsters / Enemies ---
     const enemies = [];
     const slimeGeo = new THREE.SphereGeometry(0.55, 16, 16);
     const slimeMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      roughness: 0.2,
+      color: 0xef4444,
+      roughness: 0.25,
       metalness: 0.1,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.92
     });
 
     function spawnEnemy() {
       const angle = Math.random() * Math.PI * 2;
-      const radius = 12 + Math.random() * 22;
-      const enemyMesh = new THREE.Mesh(slimeGeo, slimeMat.clone());
-      enemyMesh.position.set(
+      const radius = 14 + Math.random() * 24;
+      const mesh = new THREE.Mesh(slimeGeo, slimeMat.clone());
+      mesh.position.set(
         player.position.x + Math.cos(angle) * radius,
         0.55,
         player.position.z + Math.sin(angle) * radius
       );
-      enemyMesh.castShadow = true;
-      scene.add(enemyMesh);
+      mesh.castShadow = true;
+      scene.add(mesh);
 
       enemies.push({
-        mesh: enemyMesh,
-        hp: 60,
-        maxHp: 60,
-        speed: 3.2,
+        mesh: mesh,
+        hp: 75,
+        maxHp: 75,
+        speed: 3.5,
         attackCooldown: 0
       });
     }
 
-    // Initial batch
-    for (let i = 0; i < 10; i++) spawnEnemy();
+    for (let i = 0; i < 8; i++) spawnEnemy();
 
-    // Floating combat text overlay
+    // Damage indicator overlay
     function showDamageNumber(pos3D, amount) {
       const screenPos = pos3D.clone().project(camera);
       const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
@@ -376,10 +444,10 @@
       el.style.left = `${x}px`;
       el.style.top = `${y}px`;
       document.body.appendChild(el);
-      setTimeout(() => el.remove(), 800);
+      setTimeout(() => el.remove(), 750);
     }
 
-    // --- 7. Input Controller ---
+    // --- 7. Controls & Combat Input ---
     const keys = {};
     window.addEventListener('keydown', (e) => {
       keys[e.key.toLowerCase()] = true;
@@ -396,24 +464,24 @@
       if (hero.isAttacking) return;
       hero.isAttacking = true;
       hero.attackTime = 0;
-      slashMat.opacity = 0.8;
+      slashMat.opacity = 0.9;
 
-      // Hit scan nearby enemies
+      // Check hit detection
       enemies.forEach((enemy) => {
         const dist = player.position.distanceTo(enemy.mesh.position);
-        if (dist < 2.5) {
-          const dmg = hero.attackPower + Math.floor(Math.random() * 10);
+        if (dist < 2.6) {
+          const dmg = hero.attackPower + Math.floor(Math.random() * 12);
           enemy.hp -= dmg;
           showDamageNumber(enemy.mesh.position, dmg);
 
           // Knockback
-          const knockDir = enemy.mesh.position.clone().sub(player.position).normalize();
-          enemy.mesh.position.addScaledVector(knockDir, 1.2);
+          const dir = enemy.mesh.position.clone().sub(player.position).normalize();
+          enemy.mesh.position.addScaledVector(dir, 1.4);
         }
       });
     }
 
-    // --- 8. Game Loop ---
+    // --- 8. Main Loop ---
     const clock = new THREE.Clock();
 
     function update() {
@@ -421,7 +489,7 @@
       const delta = Math.min(clock.getDelta(), 0.1);
       const time = clock.getElapsedTime();
 
-      // Movement Vector
+      // Hero Movement
       const move = new THREE.Vector3(0, 0, 0);
       if (keys['w'] || keys['arrowup']) move.z -= 1;
       if (keys['s'] || keys['arrowdown']) move.z += 1;
@@ -433,29 +501,19 @@
       if (isMoving) {
         move.normalize();
         player.position.addScaledVector(move, hero.speed * delta);
-        
-        // Orient hero toward movement
-        const targetRot = Math.atan2(move.x, move.z);
-        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetRot, 0.2);
 
-        // Procedural Run cycle
-        const walkCycle = Math.sin(time * 12);
-        leftLeg.rotation.x = walkCycle * 0.7;
-        rightLeg.rotation.x = -walkCycle * 0.7;
-        leftArm.rotation.x = -walkCycle * 0.6;
-        if (!hero.isAttacking) rightArm.rotation.x = walkCycle * 0.6;
-      } else {
-        // Idle recovery
-        leftLeg.rotation.x = THREE.MathUtils.lerp(leftLeg.rotation.x, 0, 0.1);
-        rightLeg.rotation.x = THREE.MathUtils.lerp(rightLeg.rotation.x, 0, 0.1);
-        leftArm.rotation.x = THREE.MathUtils.lerp(leftArm.rotation.x, 0, 0.1);
-        if (!hero.isAttacking) rightArm.rotation.x = THREE.MathUtils.lerp(rightArm.rotation.x, 0, 0.1);
+        const targetRotation = Math.atan2(move.x, move.z);
+        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetRotation, 0.22);
       }
 
-      // Attack Animation Cycle
+      // Update Rigged Animations if present
+      if (playerMixer) {
+        playerMixer.update(delta);
+      }
+
+      // Attack Animation & Arc Fade
       if (hero.isAttacking) {
-        hero.attackTime += delta * 7;
-        rightArm.rotation.x = Math.sin(hero.attackTime) * 1.6;
+        hero.attackTime += delta * 8;
         slashMat.opacity = Math.max(0, slashMat.opacity - delta * 3.5);
         if (hero.attackTime >= Math.PI) {
           hero.isAttacking = false;
@@ -463,56 +521,57 @@
         }
       }
 
-      // Enemy Logic
+      // Enemy AI & Pathing
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
-        
-        // Slime squash & stretch breathing
+
+        // Organic slime hop / stretch animation
         e.mesh.scale.set(
-          1 + Math.sin(time * 6 + i) * 0.1,
-          1 + Math.cos(time * 6 + i) * 0.15,
-          1 + Math.sin(time * 6 + i) * 0.1
+          1 + Math.sin(time * 7 + i) * 0.12,
+          1 + Math.cos(time * 7 + i) * 0.18,
+          1 + Math.sin(time * 7 + i) * 0.12
         );
 
-        const toPlayer = player.position.clone().sub(e.mesh.position);
-        toPlayer.y = 0;
-        const dist = toPlayer.length();
+        const toHero = player.position.clone().sub(e.mesh.position);
+        toHero.y = 0;
+        const dist = toHero.length();
 
-        // Aggro if hero is near
-        if (dist < 18 && dist > 1.1) {
-          toPlayer.normalize();
-          e.mesh.position.addScaledVector(toPlayer, e.speed * delta);
+        // Follow player within aggro radius
+        if (dist < 20 && dist > 1.2) {
+          toHero.normalize();
+          e.mesh.position.addScaledVector(toHero, e.speed * delta);
         }
 
-        // Deal damage to player on touch
+        // Deal damage
         e.attackCooldown -= delta;
-        if (dist <= 1.2 && e.attackCooldown <= 0) {
-          hero.hp = Math.max(0, hero.hp - 12);
+        if (dist <= 1.3 && e.attackCooldown <= 0) {
+          hero.hp = Math.max(0, hero.hp - 15);
           document.getElementById('hp-bar').style.width = `${(hero.hp / hero.maxHp) * 100}%`;
           document.getElementById('hp-text').innerText = `${hero.hp}/${hero.maxHp}`;
-          e.attackCooldown = 1.0;
+          e.attackCooldown = 0.9;
 
           if (hero.hp <= 0) {
             hero.hp = hero.maxHp;
-            player.position.set(0, 0, 0); // Respawn hero
+            player.position.set(0, 0, 0); // Respawn
+            document.getElementById('hp-bar').style.width = '100%';
+            document.getElementById('hp-text').innerText = `${hero.hp}/${hero.maxHp}`;
           }
         }
 
-        // Slime death
+        // Monster Death
         if (e.hp <= 0) {
           scene.remove(e.mesh);
           enemies.splice(i, 1);
           hero.kills++;
-          hero.xp += 40;
+          hero.xp += 45;
 
-          // Level progression
           if (hero.xp >= hero.xpNeeded) {
             hero.level++;
             hero.xp -= hero.xpNeeded;
             hero.xpNeeded = Math.floor(hero.xpNeeded * 1.5);
-            hero.maxHp += 20;
+            hero.maxHp += 25;
             hero.hp = hero.maxHp;
-            hero.attackPower += 10;
+            hero.attackPower += 12;
             document.getElementById('lvl-display').innerText = hero.level;
           }
 
@@ -522,23 +581,23 @@
           document.getElementById('xp-bar').style.width = `${(hero.xp / hero.xpNeeded) * 100}%`;
           document.getElementById('xp-text').innerText = `${hero.xp}/${hero.xpNeeded}`;
 
-          spawnEnemy(); // Maintain ambient monster count
+          spawnEnemy();
         }
       }
 
-      // Smooth Isometric Camera Follow
+      // Smooth Isometric RPG Camera
       const targetCamPos = new THREE.Vector3(
         player.position.x,
-        player.position.y + 14,
-        player.position.z + 14
+        player.position.y + 13.5,
+        player.position.z + 13.5
       );
       camera.position.lerp(targetCamPos, 0.08);
-      camera.lookAt(player.position.x, player.position.y + 1, player.position.z);
+      camera.lookAt(player.position.x, player.position.y + 0.8, player.position.z);
 
       renderer.render(scene, camera);
     }
 
-    // --- 9. Window Resize Handler ---
+    // --- 9. Fullscreen Auto-Resize ---
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
