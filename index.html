@@ -1,610 +1,1236 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Chronicles of Aetheria - 3D Action RPG</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    body, html {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #07090e;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-    #canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-    /* HUD Overlays */
-    #ui-layer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 24px;
-    }
-    .hud-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      width: 100%;
-    }
-    .player-card {
-      background: rgba(13, 17, 28, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      padding: 16px 22px;
-      border-radius: 14px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-      color: #fff;
-      min-width: 260px;
-    }
-    .player-name-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .player-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: #94a3b8;
-    }
-    .level-badge {
-      background: #3b82f6;
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 999px;
-      letter-spacing: 0.5px;
-    }
-    .bar-container {
-      background: rgba(0, 0, 0, 0.55);
-      border-radius: 8px;
-      height: 14px;
-      width: 100%;
-      overflow: hidden;
-      position: relative;
-      margin-bottom: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .bar-fill-hp {
-      background: linear-gradient(90deg, #ef4444, #f87171);
-      height: 100%;
-      width: 100%;
-      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .bar-fill-xp {
-      background: linear-gradient(90deg, #10b981, #34d399);
-      height: 100%;
-      width: 0%;
-      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .stats-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: #94a3b8;
-      font-weight: 600;
-    }
-    .counter-card {
-      background: rgba(13, 17, 28, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(12px);
-      padding: 14px 22px;
-      border-radius: 14px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-      color: #f1f5f9;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .counter-val {
-      font-size: 22px;
-      font-weight: 800;
-      color: #38bdf8;
-    }
-    .controls-hint {
-      background: rgba(13, 17, 28, 0.7);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 999px;
-      color: #cbd5e1;
-      font-size: 13px;
-      padding: 10px 24px;
-      align-self: center;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    }
-    .controls-hint kbd {
-      background: rgba(255, 255, 255, 0.12);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: inherit;
-      color: #fff;
-      font-weight: 700;
-    }
-    /* Loading overlay */
-    #loader {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #090c15;
-      z-index: 100;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      transition: opacity 0.5s ease;
-    }
-    .spinner {
-      width: 44px;
-      height: 44px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top-color: #38bdf8;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 16px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    /* Floating Damage Popups */
-    .dmg-popup {
-      position: absolute;
-      color: #f87171;
-      font-weight: 900;
-      font-size: 22px;
-      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
-      pointer-events: none;
-      animation: floatUp 0.75s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-    @keyframes floatUp {
-      0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
-      25% { transform: translate(-50%, -15px) scale(1.2); opacity: 1; }
-      100% { transform: translate(-50%, -50px) scale(0.85); opacity: 0; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Chronicles of the Void - 3D Action RPG</title>
+    <style>
+        :root {
+            --primary: #e67e22;
+            --secondary: #3498db;
+            --hp: #e74c3c;
+            --gold: #f1c40f;
+            --dark: #0f141d;
+            --panel-bg: rgba(15, 20, 29, 0.92);
+            --border: #2c3e50;
+        }
 
-  <!-- Three.js + GLTFLoader CDN scripts -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ecf0f1;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* HUD Overlay */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+
+        /* Top Left: Player Status */
+        .player-status-card {
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            width: 320px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .level-badge {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bar-container {
+            background: #222b38;
+            height: 14px;
+            border-radius: 7px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            border: 1px solid #34495e;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.15s ease-out;
+        }
+
+        .hp-fill { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+        .xp-fill { background: linear-gradient(90deg, #2980b9, #3498db); width: 0%; }
+
+        .kill-counter {
+            font-size: 13px;
+            color: #bdc3c7;
+            font-weight: 600;
+        }
+
+        /* Top Right: Help / Quick keys */
+        .key-hints {
+            align-self: flex-start;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 12px;
+            display: flex;
+            gap: 12px;
+            color: #95a5a6;
+        }
+        .key-hints span b { color: #fff; }
+
+        /* Crosshair */
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 8px;
+            height: 8px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            border: 1px solid rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        /* Bottom Controls / Actions Bar */
+        .actions-bar {
+            align-self: center;
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .action-slot {
+            width: 68px;
+            height: 68px;
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .action-slot.ready {
+            border-color: var(--gold);
+        }
+
+        .action-slot .key-tag {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--gold);
+        }
+
+        .action-slot .name-tag {
+            font-size: 11px;
+            text-align: center;
+            font-weight: 600;
+            padding: 0 4px;
+            z-index: 2;
+        }
+
+        .cooldown-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 1;
+            transition: height 0.05s linear;
+        }
+
+        /* Floating Damage Text */
+        .floating-text {
+            position: absolute;
+            font-size: 18px;
+            font-weight: 900;
+            pointer-events: none;
+            animation: floatUp 0.85s forwards ease-out;
+            text-shadow: 0 2px 4px #000;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
+            100% { opacity: 0; transform: translate(-50%, -50px) scale(0.8); }
+        }
+
+        /* Boss Notification */
+        #boss-banner {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, transparent, rgba(192, 57, 43, 0.9), transparent);
+            width: 100%;
+            text-align: center;
+            padding: 14px 0;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #fff;
+            display: none;
+            text-shadow: 0 0 16px #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Modals & Panels */
+        .modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel-bg);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            pointer-events: auto;
+            display: none;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+            width: 780px;
+            max-width: 90vw;
+            backdrop-filter: blur(8px);
+            z-index: 100;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        .modal-header h2 {
+            color: var(--gold);
+            font-size: 22px;
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #bdc3c7;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* Inventory Items */
+        .item-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-height: 350px;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .gear-slot {
+            background: #17202a;
+            border: 1px solid #34495e;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 85px;
+        }
+
+        .gear-slot:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .gear-slot.equipped {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.08);
+        }
+
+        .gear-name { font-size: 12px; font-weight: bold; color: #ecf0f1; }
+        .gear-stat { font-size: 11px; color: var(--gold); margin-top: 4px; }
+        .gear-type { font-size: 10px; color: #7f8c8d; text-transform: uppercase; }
+
+        /* Skill Selector UI */
+        .skill-select-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .skill-card {
+            background: #17202a;
+            border: 1px solid #34495e;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .skill-card.equipped {
+            border-color: var(--secondary);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .skill-card.locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .skill-info-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .skill-info-desc {
+            font-size: 11px;
+            color: #bdc3c7;
+            margin-top: 2px;
+        }
+
+        .stats-list {
+            list-style: none;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .stats-list span {
+            color: var(--gold);
+            font-weight: bold;
+            float: right;
+        }
+    </style>
+    <!-- Three.js from Official CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
-  <div id="loader">
-    <div class="spinner"></div>
-    <div style="font-size: 14px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8;">Loading 3D Realm...</div>
-  </div>
+    <div id="canvas-container"></div>
+    <div id="crosshair"></div>
 
-  <div id="canvas-container"></div>
+    <div id="boss-banner">ABOMINATION TITAN AWAKENED!</div>
 
-  <div id="ui-layer">
-    <div class="hud-top">
-      <div class="player-card">
-        <div class="player-name-row">
-          <span class="player-title">Paladin</span>
-          <span class="level-badge">LVL <span id="lvl-display">1</span></span>
-        </div>
-        <div class="bar-container">
-          <div id="hp-bar" class="bar-fill-hp"></div>
-        </div>
-        <div class="bar-container" style="height: 6px;">
-          <div id="xp-bar" class="bar-fill-xp"></div>
-        </div>
-        <div class="stats-row">
-          <span>HP: <span id="hp-text">120/120</span></span>
-          <span>EXP: <span id="xp-text">0/100</span></span>
-        </div>
-      </div>
+    <!-- Main HUD -->
+    <div id="hud">
+        <div style="display: flex; justify-content: space-between; width: 100%;">
+            <div class="player-status-card">
+                <div class="level-badge">
+                    <span id="player-lvl">LVL 1 Novice</span>
+                    <span id="boss-kills-badge">Bosses Defeated: 0</span>
+                </div>
+                <div class="bar-container">
+                    <div id="hp-bar" class="bar-fill hp-fill"></div>
+                </div>
+                <div class="bar-container" style="height: 8px;">
+                    <div id="xp-bar" class="bar-fill xp-fill"></div>
+                </div>
+                <div class="kill-counter">Defeated: <span id="kill-count" style="color: #fff;">0</span> Enemies</div>
+            </div>
 
-      <div class="counter-card">
-        <span style="font-size: 11px; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px;">Enemies Vanquished</span>
-        <span class="counter-val" id="kill-count">0</span>
-      </div>
+            <div class="key-hints">
+                <span><b>[W,A,S,D]</b> Move</span>
+                <span><b>[Space]</b> Dash (i-Frames)</span>
+                <span><b>[L-Click]</b> Slash</span>
+                <span><b>[R-Click]</b> Parry</span>
+                <span><b>[E]</b> Skill</span>
+                <span><b>[Q]</b> Ultimate</span>
+                <span><b>[I]</b> Gear & Stats</span>
+                <span><b>[K]</b> Skills Loadout</span>
+            </div>
+        </div>
+
+        <!-- Ability Cooldowns Row -->
+        <div class="actions-bar">
+            <div class="action-slot" id="slot-attack">
+                <div class="key-tag">L-CLK</div>
+                <div class="name-tag">Attack</div>
+                <div class="cooldown-overlay" id="cd-attack"></div>
+            </div>
+            <div class="action-slot" id="slot-parry">
+                <div class="key-tag">R-CLK</div>
+                <div class="name-tag">Parry</div>
+                <div class="cooldown-overlay" id="cd-parry"></div>
+            </div>
+            <div class="action-slot" id="slot-dash">
+                <div class="key-tag">SPACE</div>
+                <div class="name-tag">Dash</div>
+                <div class="cooldown-overlay" id="cd-dash"></div>
+            </div>
+            <div class="action-slot ready" id="slot-skill">
+                <div class="key-tag">E</div>
+                <div class="name-tag" id="label-skill">Cyclone</div>
+                <div class="cooldown-overlay" id="cd-skill"></div>
+            </div>
+            <div class="action-slot ready" id="slot-ultimate">
+                <div class="key-tag">Q</div>
+                <div class="name-tag" id="label-ult">Void Nova</div>
+                <div class="cooldown-overlay" id="cd-ult"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="controls-hint">
-      <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> Move &nbsp;&bull;&nbsp; <kbd>Space</kbd> / <kbd>Left-Click</kbd> Attack
+    <!-- Character / Inventory UI Modal (Key: I) -->
+    <div class="modal" id="inventory-modal">
+        <div class="modal-header">
+            <h2>Character & Armory</h2>
+            <button class="close-btn" onclick="toggleModal('inventory-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div>
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--gold);">Base Attributes</h3>
+                <ul class="stats-list">
+                    <li>Level: <span id="stat-lvl">1</span></li>
+                    <li>Max Health: <span id="stat-hp">500</span></li>
+                    <li>Attack Power: <span id="stat-atk">35</span></li>
+                    <li>Defense: <span id="stat-def">10</span></li>
+                    <li>Crit Chance: <span id="stat-crit">15%</span></li>
+                </ul>
+            </div>
+            <div>
+                <h3 style="font-size: 15px; margin-bottom: 12px; color: var(--gold);">Weapons & Armor Vault</h3>
+                <div class="item-grid" id="gear-inventory-grid"></div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    // --- 1. Core Scene & Renderer ---
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c111d);
-    scene.fog = new THREE.FogExp2(0x0c111d, 0.02);
+    <!-- Skill Select Modal (Key: K) -->
+    <div class="modal" id="skill-modal">
+        <div class="modal-header">
+            <h2>Technique Grimoire</h2>
+            <button class="close-btn" onclick="toggleModal('skill-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="skill-select-col">
+                <h4 style="color: var(--gold); margin-bottom: 8px;">Equip Secondary Skill [E]</h4>
+                <div id="skills-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+            <div class="skill-select-col">
+                <h4 style="color: var(--gold); margin-bottom: 8px;">Equip Ultimate Technique [Q]</h4>
+                <div id="ultimates-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+        </div>
+    </div>
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
-    container.appendChild(renderer.domElement);
+    <script>
+        /* =========================================================================
+           1. DATABASE: GEAR, SKILLS, ULTIMATES
+           ========================================================================= */
+        const GEAR_DATABASE = [
+            { id: 'w1', name: 'Iron Broadsword', type: 'weapon', atk: 15, def: 0, unlocked: true },
+            { id: 'w2', name: 'Obsidian Cleaver', type: 'weapon', atk: 35, def: 0, unlocked: false, reqKills: 25 },
+            { id: 'w3', name: 'Titan Bone Smasher', type: 'weapon', atk: 65, def: 5, unlocked: false, reqBoss: 1 },
+            { id: 'w4', name: 'Void Edge', type: 'weapon', atk: 110, def: 10, unlocked: false, reqBoss: 3 },
+            { id: 'a1', name: 'Leather Tunic', type: 'armor', atk: 0, def: 8, unlocked: true },
+            { id: 'a2', name: 'Knight Steel Plate', type: 'armor', atk: 0, def: 22, unlocked: false, reqKills: 40 },
+            { id: 'a3', name: 'Abyssal Dragon Mail', type: 'armor', atk: 10, def: 45, unlocked: false, reqBoss: 2 },
+            { id: 'a4', name: 'Aegis of the Infinite', type: 'armor', atk: 25, def: 80, unlocked: false, reqBoss: 4 }
+        ];
 
-    // --- 2. Lighting ---
-    const hemiLight = new THREE.HemisphereLight(0x7dd3fc, 0x1e293b, 0.85);
-    scene.add(hemiLight);
+        const SKILL_DATABASE = [
+            { id: 'whirlwind', name: 'Cyclone Slash', type: 'skill', cd: 4, radius: 6, dmgMult: 1.8, desc: 'Radial spinning strike hit surrounding targets.', reqLvl: 1, unlocked: true },
+            { id: 'shield_bash', name: 'Shield Bash', type: 'skill', cd: 5, radius: 4.5, dmgMult: 2.2, desc: 'Stuns & knocks back forward targets.', reqLvl: 20, unlocked: false },
+            { id: 'blood_blade', name: 'Vampiric Burst', type: 'skill', cd: 6, radius: 5.5, dmgMult: 2.5, desc: 'Heavy dark burst that absorbs HP.', reqBoss: 2, unlocked: false }
+        ];
 
-    const sun = new THREE.DirectionalLight(0xfff7ed, 1.4);
-    sun.position.set(30, 45, 25);
-    sun.castShadow = true;
-    sun.shadow.mapSize.width = 2048;
-    sun.shadow.mapSize.height = 2048;
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 120;
-    const shadowDist = 40;
-    sun.shadow.camera.left = -shadowDist;
-    sun.shadow.camera.right = shadowDist;
-    sun.shadow.camera.top = shadowDist;
-    sun.shadow.camera.bottom = -shadowDist;
-    sun.shadow.bias = -0.0004;
-    scene.add(sun);
+        const ULTIMATE_DATABASE = [
+            { id: 'void_nova', name: 'Void Nova', type: 'ult', cd: 12, radius: 12, dmgMult: 4.5, desc: 'Unleashes dark shockwave in huge radius.', reqLvl: 1, unlocked: true },
+            { id: 'meteor_strike', name: 'Cataclysmic Leap', type: 'ult', cd: 15, radius: 14, dmgMult: 6.0, desc: 'Leap and shatter the earth on impact.', reqLvl: 20, unlocked: false },
+            { id: 'wrath_titans', name: 'Wrath of Titans', type: 'ult', cd: 20, radius: 16, dmgMult: 8.5, desc: 'Supreme obliteration unlocked through boss conquest.', reqBoss: 3, unlocked: false }
+        ];
 
-    // --- 3. Ground & Environment Foliage ---
-    const groundGeo = new THREE.PlaneGeometry(180, 180, 40, 40);
-    groundGeo.rotateX(-Math.PI / 2);
-    const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x1a2e22,
-      roughness: 0.88,
-      metalness: 0.04
-    });
-    const ground = new THREE.Mesh(groundGeo, groundMat);
-    ground.receiveShadow = true;
-    scene.add(ground);
+        /* =========================================================================
+           2. GAME ENGINE SETUP (THREE.JS, CAMERA, SCENE, LIGHTS)
+           ========================================================================= */
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0d14);
+        scene.fog = new THREE.FogExp2(0x0a0d14, 0.025);
 
-    // Stylized Low-Poly Trees
-    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.4, 1.8, 6);
-    const foliageGeo1 = new THREE.ConeGeometry(1.6, 2.2, 6);
-    const foliageGeo2 = new THREE.ConeGeometry(1.2, 1.8, 6);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.9 });
-    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.6, flatShading: true });
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
 
-    function addTree(x, z) {
-      const tree = new THREE.Group();
-      const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-      trunk.position.y = 0.9;
-      trunk.castShadow = true;
-      tree.add(trunk);
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1a252f, 0.6);
+        scene.add(hemiLight);
 
-      const f1 = new THREE.Mesh(foliageGeo1, foliageMat);
-      f1.position.y = 2.2;
-      f1.castShadow = true;
-      tree.add(f1);
+        const dirLight = new THREE.DirectionalLight(0xffecd2, 0.9);
+        dirLight.position.set(40, 60, 40);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 150;
+        const d = 40;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        scene.add(dirLight);
 
-      const f2 = new THREE.Mesh(foliageGeo2, foliageMat);
-      f2.position.y = 3.2;
-      f2.castShadow = true;
-      tree.add(f2);
+        // World Arena Ground & Grid
+        const groundGeo = new THREE.PlaneGeometry(160, 160);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0x141a24, roughness: 0.85, metalness: 0.15 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
-      const scale = 0.75 + Math.random() * 0.55;
-      tree.scale.set(scale, scale, scale);
-      tree.position.set(x, 0, z);
-      scene.add(tree);
-    }
+        const gridHelper = new THREE.GridHelper(160, 40, 0xe67e22, 0x1b2631);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
 
-    for (let i = 0; i < 70; i++) {
-      const r = 12 + Math.random() * 65;
-      const angle = Math.random() * Math.PI * 2;
-      addTree(Math.cos(angle) * r, Math.sin(angle) * r);
-    }
+        // Pillar Props for Ambience
+        const pillarGeo = new THREE.CylinderGeometry(0.8, 1, 6, 8);
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x243342, roughness: 0.9 });
+        for(let i = 0; i < 16; i++) {
+            const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+            const ang = (i / 16) * Math.PI * 2;
+            const dist = 60 + Math.random() * 12;
+            pillar.position.set(Math.cos(ang)*dist, 3, Math.sin(ang)*dist);
+            pillar.castShadow = true;
+            pillar.receiveShadow = true;
+            scene.add(pillar);
+        }
 
-    // --- 4. Hero Character & Free Model Loading ---
-    const player = new THREE.Group();
-    scene.add(player);
+        /* =========================================================================
+           3. PLAYER CREATION & ANIMATION RIG
+           ========================================================================= */
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
 
-    let playerMixer = null;
-    let playerActions = {};
-    let activeAction = null;
+        // Player Rig Components
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2980b9, roughness: 0.5 });
+        const armorAccentMat = new THREE.MeshStandardMaterial({ color: 0xd35400, roughness: 0.3 });
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.2, 0.6), bodyMat);
+        torso.position.y = 1.3;
+        torso.castShadow = true;
+        playerGroup.add(torso);
 
-    // Visual Slash Effect
-    const slashGeo = new THREE.RingGeometry(0.8, 1.7, 24, 1, 0, Math.PI * 0.85);
-    const slashMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0 });
-    const slashFx = new THREE.Mesh(slashGeo, slashMat);
-    slashFx.rotation.x = -Math.PI / 2;
-    slashFx.position.set(0, 0.85, 0.75);
-    player.add(slashFx);
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), armorAccentMat);
+        head.position.y = 2.15;
+        head.castShadow = true;
+        playerGroup.add(head);
 
-    const loader = new THREE.GLTFLoader();
+        // Weapon Rig
+        const weaponPivot = new THREE.Group();
+        weaponPivot.position.set(0.6, 1.2, 0);
+        playerGroup.add(weaponPivot);
 
-    // Fallback procedural hero geometry while remote model loads
-    const fallbackHero = new THREE.Group();
-    const bodyM = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 1.2, 8), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
-    bodyM.position.y = 0.9;
-    bodyM.castShadow = true;
-    fallbackHero.add(bodyM);
-    player.add(fallbackHero);
+        const bladeGeo = new THREE.BoxGeometry(0.12, 1.6, 0.25);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1, metalness: 0.9, roughness: 0.2 });
+        const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
+        bladeMesh.position.y = 0.8;
+        bladeMesh.castShadow = true;
+        weaponPivot.add(bladeMesh);
 
-    // Free rigged low-poly character GLB from official three.js examples
-    loader.load(
-      'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Xbot.glb',
-      (gltf) => {
-        player.remove(fallbackHero);
-        const char = gltf.scene;
-        char.scale.set(0.9, 0.9, 0.9);
-        char.traverse((c) => {
-          if (c.isMesh) {
-            c.castShadow = true;
-            c.receiveShadow = true;
-          }
+        // Parry Shield Visual
+        const shieldMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.08, 16), new THREE.MeshStandardMaterial({
+            color: 0xf39c12, transparent: true, opacity: 0, roughness: 0.3
+        }));
+        shieldMesh.rotation.x = Math.PI / 2;
+        shieldMesh.position.set(0, 1.4, 0.8);
+        playerGroup.add(shieldMesh);
+
+        /* =========================================================================
+           4. PLAYER STATS & ENGINE STATE
+           ========================================================================= */
+        const player = {
+            level: 1,
+            xp: 0,
+            xpNeeded: 100,
+            hp: 500,
+            maxHp: 500,
+            baseAtk: 30,
+            baseDef: 10,
+            speed: 13,
+            kills: 0,
+            bossKills: 0,
+            isInvulnerable: false,
+            isDashing: false,
+            isParrying: false,
+            isAttacking: false,
+            dashDuration: 0.24,
+            dashTimer: 0,
+            dashDir: new THREE.Vector3(),
+            equippedWeapon: GEAR_DATABASE[0],
+            equippedArmor: GEAR_DATABASE[4],
+            equippedSkill: SKILL_DATABASE[0],
+            equippedUlt: ULTIMATE_DATABASE[0]
+        };
+
+        const cooldowns = {
+            dash: { current: 0, max: 1.1 },
+            attack: { current: 0, max: 0.38 },
+            parry: { current: 0, max: 2.2 },
+            skill: { current: 0, max: SKILL_DATABASE[0].cd },
+            ult: { current: 0, max: ULTIMATE_DATABASE[0].cd }
+        };
+
+        /* =========================================================================
+           5. INPUT PROCESSING & MOUSE TRACKING
+           ========================================================================= */
+        const keys = {};
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const mouseWorldAim = new THREE.Vector3();
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if(e.code === 'KeyI') toggleModal('inventory-modal');
+            if(e.code === 'KeyK') toggleModal('skill-modal');
+            if(e.code === 'Space') performDash();
+            if(e.code === 'KeyE') triggerSkill();
+            if(e.code === 'KeyQ') triggerUltimate();
         });
-        player.add(char);
+        window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-        // Setup Animations
-        if (gltf.animations && gltf.animations.length > 0) {
-          playerMixer = new THREE.AnimationMixer(char);
-          gltf.animations.forEach((clip) => {
-            playerActions[clip.name.toLowerCase()] = playerMixer.clipAction(clip);
-          });
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        });
 
-          // Default actions fallback
-          const defaultWalk = playerActions['walk'] || playerActions['run'] || Object.values(playerActions)[3];
-          const defaultIdle = playerActions['idle'] || Object.values(playerActions)[0];
-          
-          if (defaultIdle) {
-            defaultIdle.play();
-            activeAction = defaultIdle;
-          }
-        }
-        document.getElementById('loader').style.opacity = '0';
-        setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-      },
-      undefined,
-      (err) => {
-        console.warn("Could not load external GLB hero, using procedural geometry fallback.", err);
-        document.getElementById('loader').style.display = 'none';
-      }
-    );
+        window.addEventListener('mousedown', (e) => {
+            if(document.pointerLockElement === null && (e.target.tagName === 'CANVAS')) {
+                // Keep canvas free clicking
+            }
+            if(e.button === 0) performAttack();
+            if(e.button === 2) performParry();
+        });
+        window.addEventListener('contextmenu', (e) => e.preventDefault());
 
-    // --- 5. Game State & Hero Stats ---
-    const hero = {
-      hp: 120,
-      maxHp: 120,
-      level: 1,
-      xp: 0,
-      xpNeeded: 100,
-      kills: 0,
-      speed: 9.0,
-      attackPower: 40,
-      isAttacking: false,
-      attackTime: 0
-    };
+        /* =========================================================================
+           6. ENEMY GENERATOR, TYPES & BOSS FACTORY
+           ========================================================================= */
+        const enemies = [];
+        const particles = [];
 
-    // --- 6. Monsters / Enemies ---
-    const enemies = [];
-    const slimeGeo = new THREE.SphereGeometry(0.55, 16, 16);
-    const slimeMat = new THREE.MeshStandardMaterial({
-      color: 0xef4444,
-      roughness: 0.25,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.92
-    });
+        const ENEMY_SPECS = {
+            SLIME: { type: 'slime', hp: 55, speed: 4.0, atk: 12, xp: 25, scale: 0.9, color: 0x2ecc71 },
+            SKELETON: { type: 'skeleton', hp: 90, speed: 6.5, atk: 20, xp: 45, scale: 1.1, color: 0xecf0f1 },
+            ZOMBIE: { type: 'zombie', hp: 160, speed: 3.2, atk: 28, xp: 60, scale: 1.25, color: 0x27ae60 },
+            WOLF: { type: 'wolf', hp: 80, speed: 8.5, atk: 24, xp: 50, scale: 1.0, color: 0x7f8c8d },
+            BOSS: { type: 'abomination', hp: 1200, speed: 4.8, atk: 55, xp: 650, scale: 3.2, color: 0x8e44ad }
+        };
 
-    function spawnEnemy() {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = 14 + Math.random() * 24;
-      const mesh = new THREE.Mesh(slimeGeo, slimeMat.clone());
-      mesh.position.set(
-        player.position.x + Math.cos(angle) * radius,
-        0.55,
-        player.position.z + Math.sin(angle) * radius
-      );
-      mesh.castShadow = true;
-      scene.add(mesh);
+        function createEnemyMesh(typeSpec) {
+            const group = new THREE.Group();
+            let geo, mat;
 
-      enemies.push({
-        mesh: mesh,
-        hp: 75,
-        maxHp: 75,
-        speed: 3.5,
-        attackCooldown: 0
-      });
-    }
+            if (typeSpec.type === 'slime') {
+                geo = new THREE.SphereGeometry(0.7, 12, 12);
+                mat = new THREE.MeshStandardMaterial({ color: typeSpec.color, roughness: 0.1, transparent: true, opacity: 0.85 });
+            } else if (typeSpec.type === 'skeleton') {
+                geo = new THREE.CylinderGeometry(0.3, 0.3, 1.8, 8);
+                mat = new THREE.MeshStandardMaterial({ color: typeSpec.color, roughness: 0.7 });
+            } else if (typeSpec.type === 'wolf') {
+                geo = new THREE.BoxGeometry(0.8, 0.7, 1.6);
+                mat = new THREE.MeshStandardMaterial({ color: typeSpec.color, roughness: 0.8 });
+            } else if (typeSpec.type === 'abomination') {
+                geo = new THREE.DodecahedronGeometry(1.4, 1);
+                mat = new THREE.MeshStandardMaterial({ color: typeSpec.color, roughness: 0.4, emissive: 0x2c003e });
+            } else {
+                geo = new THREE.BoxGeometry(0.9, 1.7, 0.7);
+                mat = new THREE.MeshStandardMaterial({ color: typeSpec.color, roughness: 0.8 });
+            }
 
-    for (let i = 0; i < 8; i++) spawnEnemy();
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.y = (typeSpec.type === 'wolf' ? 0.4 : 0.9) * typeSpec.scale;
+            mesh.castShadow = true;
+            group.add(mesh);
 
-    // Damage indicator overlay
-    function showDamageNumber(pos3D, amount) {
-      const screenPos = pos3D.clone().project(camera);
-      const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
-      const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
+            // Floating HP Bar on head
+            const hpBack = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.2), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+            hpBack.position.y = mesh.position.y + 1.2 * typeSpec.scale;
+            const hpFront = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.2), new THREE.MeshBasicMaterial({ color: 0xe74c3c }));
+            hpFront.position.z = 0.01;
+            hpBack.add(hpFront);
+            group.add(hpBack);
 
-      const el = document.createElement('div');
-      el.className = 'dmg-popup';
-      el.innerText = `-${amount}`;
-      el.style.left = `${x}px`;
-      el.style.top = `${y}px`;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 750);
-    }
-
-    // --- 7. Controls & Combat Input ---
-    const keys = {};
-    window.addEventListener('keydown', (e) => {
-      keys[e.key.toLowerCase()] = true;
-      if (e.code === 'Space') executeAttack();
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
-    window.addEventListener('pointerdown', (e) => {
-      if (e.button === 0) executeAttack();
-    });
-
-    function executeAttack() {
-      if (hero.isAttacking) return;
-      hero.isAttacking = true;
-      hero.attackTime = 0;
-      slashMat.opacity = 0.9;
-
-      // Check hit detection
-      enemies.forEach((enemy) => {
-        const dist = player.position.distanceTo(enemy.mesh.position);
-        if (dist < 2.6) {
-          const dmg = hero.attackPower + Math.floor(Math.random() * 12);
-          enemy.hp -= dmg;
-          showDamageNumber(enemy.mesh.position, dmg);
-
-          // Knockback
-          const dir = enemy.mesh.position.clone().sub(player.position).normalize();
-          enemy.mesh.position.addScaledVector(dir, 1.4);
-        }
-      });
-    }
-
-    // --- 8. Main Loop ---
-    const clock = new THREE.Clock();
-
-    function update() {
-      requestAnimationFrame(update);
-      const delta = Math.min(clock.getDelta(), 0.1);
-      const time = clock.getElapsedTime();
-
-      // Hero Movement
-      const move = new THREE.Vector3(0, 0, 0);
-      if (keys['w'] || keys['arrowup']) move.z -= 1;
-      if (keys['s'] || keys['arrowdown']) move.z += 1;
-      if (keys['a'] || keys['arrowleft']) move.x -= 1;
-      if (keys['d'] || keys['arrowright']) move.x += 1;
-
-      const isMoving = move.lengthSq() > 0;
-
-      if (isMoving) {
-        move.normalize();
-        player.position.addScaledVector(move, hero.speed * delta);
-
-        const targetRotation = Math.atan2(move.x, move.z);
-        player.rotation.y = THREE.MathUtils.lerp(player.rotation.y, targetRotation, 0.22);
-      }
-
-      // Update Rigged Animations if present
-      if (playerMixer) {
-        playerMixer.update(delta);
-      }
-
-      // Attack Animation & Arc Fade
-      if (hero.isAttacking) {
-        hero.attackTime += delta * 8;
-        slashMat.opacity = Math.max(0, slashMat.opacity - delta * 3.5);
-        if (hero.attackTime >= Math.PI) {
-          hero.isAttacking = false;
-          slashMat.opacity = 0;
-        }
-      }
-
-      // Enemy AI & Pathing
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const e = enemies[i];
-
-        // Organic slime hop / stretch animation
-        e.mesh.scale.set(
-          1 + Math.sin(time * 7 + i) * 0.12,
-          1 + Math.cos(time * 7 + i) * 0.18,
-          1 + Math.sin(time * 7 + i) * 0.12
-        );
-
-        const toHero = player.position.clone().sub(e.mesh.position);
-        toHero.y = 0;
-        const dist = toHero.length();
-
-        // Follow player within aggro radius
-        if (dist < 20 && dist > 1.2) {
-          toHero.normalize();
-          e.mesh.position.addScaledVector(toHero, e.speed * delta);
+            group.scale.set(typeSpec.scale, typeSpec.scale, typeSpec.scale);
+            return { group, hpBar: hpFront };
         }
 
-        // Deal damage
-        e.attackCooldown -= delta;
-        if (dist <= 1.3 && e.attackCooldown <= 0) {
-          hero.hp = Math.max(0, hero.hp - 15);
-          document.getElementById('hp-bar').style.width = `${(hero.hp / hero.maxHp) * 100}%`;
-          document.getElementById('hp-text').innerText = `${hero.hp}/${hero.maxHp}`;
-          e.attackCooldown = 0.9;
+        function spawnEnemy(forceBoss = false) {
+            let spec;
+            if(forceBoss) {
+                spec = ENEMY_SPECS.BOSS;
+            } else {
+                const keys = ['SLIME', 'SKELETON', 'ZOMBIE', 'WOLF'];
+                spec = ENEMY_SPECS[keys[Math.floor(Math.random() * keys.length)]];
+            }
 
-          if (hero.hp <= 0) {
-            hero.hp = hero.maxHp;
-            player.position.set(0, 0, 0); // Respawn
-            document.getElementById('hp-bar').style.width = '100%';
-            document.getElementById('hp-text').innerText = `${hero.hp}/${hero.maxHp}`;
-          }
+            const { group, hpBar } = createEnemyMesh(spec);
+            
+            // Random point on outer spawn circle
+            const angle = Math.random() * Math.PI * 2;
+            const radius = 45 + Math.random() * 15;
+            group.position.set(
+                playerGroup.position.x + Math.cos(angle) * radius,
+                0,
+                playerGroup.position.z + Math.sin(angle) * radius
+            );
+
+            scene.add(group);
+
+            enemies.push({
+                spec,
+                group,
+                hpBar,
+                hp: spec.hp * (1 + player.bossKills * 0.3),
+                maxHp: spec.hp * (1 + player.bossKills * 0.3),
+                speed: spec.speed,
+                atk: spec.atk * (1 + player.bossKills * 0.2),
+                attackCooldown: 0,
+                isBoss: forceBoss
+            });
         }
 
-        // Monster Death
-        if (e.hp <= 0) {
-          scene.remove(e.mesh);
-          enemies.splice(i, 1);
-          hero.kills++;
-          hero.xp += 45;
-
-          if (hero.xp >= hero.xpNeeded) {
-            hero.level++;
-            hero.xp -= hero.xpNeeded;
-            hero.xpNeeded = Math.floor(hero.xpNeeded * 1.5);
-            hero.maxHp += 25;
-            hero.hp = hero.maxHp;
-            hero.attackPower += 12;
-            document.getElementById('lvl-display').innerText = hero.level;
-          }
-
-          document.getElementById('kill-count').innerText = hero.kills;
-          document.getElementById('hp-bar').style.width = `${(hero.hp / hero.maxHp) * 100}%`;
-          document.getElementById('hp-text').innerText = `${hero.hp}/${hero.maxHp}`;
-          document.getElementById('xp-bar').style.width = `${(hero.xp / hero.xpNeeded) * 100}%`;
-          document.getElementById('xp-text').innerText = `${hero.xp}/${hero.xpNeeded}`;
-
-          spawnEnemy();
+        /* =========================================================================
+           7. COMBAT, COOLDOWNS & ACTION IMPLEMENTATION
+           ========================================================================= */
+        function triggerScreenShake(intensity = 0.3) {
+            cameraOffsetImpulse.set(
+                (Math.random() - 0.5) * intensity,
+                (Math.random() - 0.5) * intensity,
+                (Math.random() - 0.5) * intensity
+            );
         }
-      }
 
-      // Smooth Isometric RPG Camera
-      const targetCamPos = new THREE.Vector3(
-        player.position.x,
-        player.position.y + 13.5,
-        player.position.z + 13.5
-      );
-      camera.position.lerp(targetCamPos, 0.08);
-      camera.lookAt(player.position.x, player.position.y + 0.8, player.position.z);
+        function spawnDamageText(val, worldPos, isCrit = false, customColor = null) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = typeof val === 'number' ? Math.round(val) : val;
+            el.style.color = customColor ? customColor : (isCrit ? '#f39c12' : '#ecf0f1');
+            if (isCrit) el.style.fontSize = '26px';
+            document.body.appendChild(el);
 
-      renderer.render(scene, camera);
-    }
+            const proj = worldPos.clone().project(camera);
+            const x = (proj.x * .5 + .5) * window.innerWidth;
+            const y = (-(proj.y * .5) + .5) * window.innerHeight;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
 
-    // --- 9. Fullscreen Auto-Resize ---
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+            setTimeout(() => el.remove(), 850);
+        }
 
-    update();
-  </script>
+        function createShockwaveParticle(pos, radius, colorHex) {
+            const pGeo = new THREE.RingGeometry(0.1, radius, 32);
+            const pMat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 });
+            const pMesh = new THREE.Mesh(pGeo, pMat);
+            pMesh.rotation.x = -Math.PI / 2;
+            pMesh.position.copy(pos);
+            pMesh.position.y = 0.2;
+            scene.add(pMesh);
+            particles.push({ mesh: pMesh, duration: 0.45, life: 0.45 });
+        }
+
+        function performAttack() {
+            if(cooldowns.attack.current > 0 || player.isParrying) return;
+            cooldowns.attack.current = cooldowns.attack.max;
+            player.isAttacking = true;
+
+            // Attack swing animation
+            weaponPivot.rotation.y = -Math.PI / 1.5;
+            setTimeout(() => { weaponPivot.rotation.y = Math.PI / 2.5; }, 90);
+            setTimeout(() => { weaponPivot.rotation.y = 0; player.isAttacking = false; }, 260);
+
+            // Compute Hitbox in front of player
+            const totalAtk = player.baseAtk + player.equippedWeapon.atk;
+            const hitPos = playerGroup.position.clone().add(new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0), playerGroup.rotation.y).multiplyScalar(2.2));
+
+            dealAreaDamage(hitPos, 2.5, totalAtk, 0.2);
+        }
+
+        function performParry() {
+            if(cooldowns.parry.current > 0) return;
+            cooldowns.parry.current = cooldowns.parry.max;
+            player.isParrying = true;
+            shieldMesh.material.opacity = 0.85;
+
+            setTimeout(() => {
+                player.isParrying = false;
+                shieldMesh.material.opacity = 0;
+            }, 550); // 550ms Active parry window
+        }
+
+        function performDash() {
+            if(cooldowns.dash.current > 0) return;
+            cooldowns.dash.current = cooldowns.dash.max;
+            player.isDashing = true;
+            player.isInvulnerable = true;
+            player.dashTimer = player.dashDuration;
+
+            // Gather dash vector from keys or forward
+            const moveVec = new THREE.Vector3();
+            if(keys['KeyW']) moveVec.z -= 1;
+            if(keys['KeyS']) moveVec.z += 1;
+            if(keys['KeyA']) moveVec.x -= 1;
+            if(keys['KeyD']) moveVec.x += 1;
+
+            if(moveVec.lengthSq() > 0) {
+                moveVec.normalize();
+                player.dashDir.copy(moveVec);
+            } else {
+                player.dashDir.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0,1,0), playerGroup.rotation.y);
+            }
+
+            createShockwaveParticle(playerGroup.position, 1.8, 0x3498db);
+        }
+
+        function triggerSkill() {
+            if(cooldowns.skill.current > 0) return;
+            const skill = player.equippedSkill;
+            cooldowns.skill.current = skill.cd;
+
+            createShockwaveParticle(playerGroup.position, skill.radius, 0xe67e22);
+            triggerScreenShake(0.5);
+
+            const totalAtk = (player.baseAtk + player.equippedWeapon.atk) * skill.dmgMult;
+            dealAreaDamage(playerGroup.position, skill.radius, totalAtk, 0.35);
+
+            // Life leech skill bonus
+            if(skill.id === 'blood_blade') {
+                player.hp = Math.min(player.maxHp, player.hp + 60);
+                spawnDamageText("+60 HP", playerGroup.position, false, "#2ecc71");
+            }
+        }
+
+        function triggerUltimate() {
+            if(cooldowns.ult.current > 0) return;
+            const ult = player.equippedUlt;
+            cooldowns.ult.current = ult.cd;
+
+            createShockwaveParticle(playerGroup.position, ult.radius, 0x9b59b6);
+            triggerScreenShake(1.0);
+
+            const totalAtk = (player.baseAtk + player.equippedWeapon.atk) * ult.dmgMult;
+            dealAreaDamage(playerGroup.position, ult.radius, totalAtk, 0.6);
+        }
+
+        function dealAreaDamage(center, radius, baseDamage, critBonus = 0.2) {
+            enemies.forEach(enemy => {
+                const dist = enemy.group.position.distanceTo(center);
+                if (dist <= radius) {
+                    const isCrit = Math.random() < (0.15 + critBonus);
+                    let finalDmg = isCrit ? baseDamage * 1.8 : baseDamage;
+                    finalDmg = Math.max(1, finalDmg - 5);
+
+                    enemy.hp -= finalDmg;
+                    spawnDamageText(finalDmg, enemy.group.position, isCrit);
+
+                    // Pushback effect
+                    const pushDir = enemy.group.position.clone().sub(center).normalize().multiplyScalar(0.7);
+                    enemy.group.position.add(pushDir);
+                }
+            });
+        }
+
+        /* =========================================================================
+           8. LOOT, LEVELING, INVENTORY & PROGRESSION
+           ========================================================================= */
+        function gainXp(amount) {
+            player.xp += amount;
+            if (player.xp >= player.xpNeeded) {
+                player.xp -= player.xpNeeded;
+                player.level++;
+                player.xpNeeded = Math.floor(player.xpNeeded * 1.45);
+                player.maxHp += 45;
+                player.hp = player.maxHp;
+                player.baseAtk += 6;
+                player.baseDef += 3;
+
+                spawnDamageText("LEVEL UP!", playerGroup.position, true, "#f1c40f");
+
+                // Milestone Unlock Checks (Every 20 Levels)
+                if (player.level === 20) {
+                    unlockSkillById('shield_bash');
+                    unlockUltById('meteor_strike');
+                    spawnDamageText("NEW SKILLS UNLOCKED IN GRIMOIRE [K]!", playerGroup.position, true, "#e67e22");
+                }
+
+                refreshUI();
+            }
+        }
+
+        function enemyDefeated(enemy) {
+            player.kills++;
+            gainXp(enemy.spec.xp);
+
+            // Boss Defeated Milestone
+            if (enemy.isBoss) {
+                player.bossKills++;
+                spawnDamageText("BOSS VANQUISHED!", playerGroup.position, true, "#9b59b6");
+                triggerScreenShake(0.8);
+
+                // Milestone Unlocks
+                if (player.bossKills === 1) unlockGearById('w3');
+                if (player.bossKills === 2) {
+                    unlockGearById('a3');
+                    unlockSkillById('blood_blade');
+                }
+                if (player.bossKills === 3) {
+                    unlockGearById('w4');
+                    unlockUltById('wrath_titans');
+                }
+                if (player.bossKills === 4) unlockGearById('a4');
+            }
+
+            // Normal Kill threshold weapon unlocks
+            if (player.kills === 25) unlockGearById('w2');
+            if (player.kills === 40) unlockGearById('a2');
+
+            // Boss spawn checks at 50, 100, 150, 200 kills
+            if ([50, 100, 150, 200].includes(player.kills)) {
+                triggerBossSpawn();
+            }
+
+            refreshUI();
+        }
+
+        function triggerBossSpawn() {
+            const banner = document.getElementById('boss-banner');
+            banner.style.display = 'block';
+            setTimeout(() => { banner.style.display = 'none'; }, 4500);
+            spawnEnemy(true);
+        }
+
+        function unlockGearById(id) {
+            const gear = GEAR_DATABASE.find(g => g.id === id);
+            if(gear) gear.unlocked = true;
+            renderInventory();
+        }
+        function unlockSkillById(id) {
+            const s = SKILL_DATABASE.find(sk => sk.id === id);
+            if(s) s.unlocked = true;
+            renderSkillSelector();
+        }
+        function unlockUltById(id) {
+            const u = ULTIMATE_DATABASE.find(uk => uk.id === id);
+            if(u) u.unlocked = true;
+            renderSkillSelector();
+        }
+
+        /* =========================================================================
+           9. UI & MODAL INTERACTION CONTROLLERS
+           ========================================================================= */
+        function toggleModal(modalId) {
+            const el = document.getElementById(modalId);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+            if (el.style.display === 'block') {
+                renderInventory();
+                renderSkillSelector();
+            }
+        }
+
+        function renderInventory() {
+            document.getElementById('stat-lvl').innerText = player.level;
+            document.getElementById('stat-hp').innerText = player.maxHp;
+            document.getElementById('stat-atk').innerText = player.baseAtk + player.equippedWeapon.atk;
+            document.getElementById('stat-def').innerText = player.baseDef + player.equippedArmor.def;
+
+            const grid = document.getElementById('gear-inventory-grid');
+            grid.innerHTML = '';
+
+            GEAR_DATABASE.forEach(item => {
+                if(!item.unlocked) return;
+                const slot = document.createElement('div');
+                const isEquipped = player.equippedWeapon.id === item.id || player.equippedArmor.id === item.id;
+                slot.className = `gear-slot ${isEquipped ? 'equipped' : ''}`;
+                slot.innerHTML = `
+                    <div class="gear-type">${item.type}</div>
+                    <div class="gear-name">${item.name}</div>
+                    <div class="gear-stat">${item.atk ? `+${item.atk} ATK` : ''} ${item.def ? `+${item.def} DEF` : ''}</div>
+                `;
+                slot.onclick = () => {
+                    if(item.type === 'weapon') player.equippedWeapon = item;
+                    if(item.type === 'armor') player.equippedArmor = item;
+                    renderInventory();
+                    refreshUI();
+                };
+                grid.appendChild(slot);
+            });
+        }
+
+        function renderSkillSelector() {
+            const skillContainer = document.getElementById('skills-list');
+            skillContainer.innerHTML = '';
+            SKILL_DATABASE.forEach(sk => {
+                const card = document.createElement('div');
+                const isEq = player.equippedSkill.id === sk.id;
+                card.className = `skill-card ${isEq ? 'equipped' : ''} ${sk.unlocked ? '' : 'locked'}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="skill-info-title">${sk.name} ${!sk.unlocked ? '(Locked)' : ''}</div>
+                        <div class="skill-info-desc">${sk.desc} | CD: ${sk.cd}s</div>
+                    </div>
+                `;
+                if(sk.unlocked) {
+                    card.onclick = () => {
+                        player.equippedSkill = sk;
+                        cooldowns.skill.max = sk.cd;
+                        document.getElementById('label-skill').innerText = sk.name.split(' ')[0];
+                        renderSkillSelector();
+                    };
+                }
+                skillContainer.appendChild(card);
+            });
+
+            const ultContainer = document.getElementById('ultimates-list');
+            ultContainer.innerHTML = '';
+            ULTIMATE_DATABASE.forEach(ult => {
+                const card = document.createElement('div');
+                const isEq = player.equippedUlt.id === ult.id;
+                card.className = `skill-card ${isEq ? 'equipped' : ''} ${ult.unlocked ? '' : 'locked'}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="skill-info-title">${ult.name} ${!ult.unlocked ? '(Locked)' : ''}</div>
+                        <div class="skill-info-desc">${ult.desc} | CD: ${ult.cd}s</div>
+                    </div>
+                `;
+                if(ult.unlocked) {
+                    card.onclick = () => {
+                        player.equippedUlt = ult;
+                        cooldowns.ult.max = ult.cd;
+                        document.getElementById('label-ult').innerText = ult.name.split(' ')[0];
+                        renderSkillSelector();
+                    };
+                }
+                ultContainer.appendChild(card);
+            });
+        }
+
+        function refreshUI() {
+            document.getElementById('player-lvl').innerText = `LVL ${player.level}`;
+            document.getElementById('boss-kills-badge').innerText = `Bosses: ${player.bossKills}`;
+            document.getElementById('kill-count').innerText = player.kills;
+
+            // Bar updates
+            const hpPct = Math.max(0, (player.hp / player.maxHp) * 100);
+            document.getElementById('hp-bar').style.width = `${hpPct}%`;
+            const xpPct = (player.xp / player.xpNeeded) * 100;
+            document.getElementById('xp-bar').style.width = `${xpPct}%`;
+        }
+
+        /* =========================================================================
+           10. MAIN ENGINE LOOP & TICK INTERPOLATION
+           ========================================================================= */
+        const clock = new THREE.Clock();
+        const cameraOffsetImpulse = new THREE.Vector3();
+        let targetCamPos = new THREE.Vector3();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = Math.min(clock.getDelta(), 0.1);
+
+            // Cooldown Dials
+            for (let k in cooldowns) {
+                if (cooldowns[k].current > 0) {
+                    cooldowns[k].current -= delta;
+                    const pct = (cooldowns[k].current / cooldowns[k].max) * 100;
+                    document.getElementById(`cd-${k}`).style.height = `${pct}%`;
+                } else {
+                    document.getElementById(`cd-${k}`).style.height = '0%';
+                }
+            }
+
+            // Raycast for Mouse Direction
+            raycaster.setFromCamera(mouse, camera);
+            raycaster.ray.intersectPlane(groundPlane, mouseWorldAim);
+
+            // Orient Player to Mouse
+            if (mouseWorldAim) {
+                const lookAngle = Math.atan2(
+                    mouseWorldAim.x - playerGroup.position.x,
+                    mouseWorldAim.z - playerGroup.position.z
+                );
+                playerGroup.rotation.y = lookAngle;
+            }
+
+            // Movement & Dash Execution
+            if (player.isDashing) {
+                player.dashTimer -= delta;
+                playerGroup.position.addScaledVector(player.dashDir, player.speed * 2.6 * delta);
+                if (player.dashTimer <= 0) {
+                    player.isDashing = false;
+                    player.isInvulnerable = false;
+                }
+            } else {
+                const moveVec = new THREE.Vector3();
+                if (keys['KeyW']) moveVec.z -= 1;
+                if (keys['KeyS']) moveVec.z += 1;
+                if (keys['KeyA']) moveVec.x -= 1;
+                if (keys['KeyD']) moveVec.x += 1;
+
+                if (moveVec.lengthSq() > 0) {
+                    moveVec.normalize();
+                    playerGroup.position.addScaledVector(moveVec, player.speed * delta);
+                }
+            }
+
+            // Keep in bounds
+            playerGroup.position.x = Math.max(-75, Math.min(75, playerGroup.position.x));
+            playerGroup.position.z = Math.max(-75, Math.min(75, playerGroup.position.z));
+
+            // Camera Smooth Follow
+            targetCamPos.set(playerGroup.position.x, playerGroup.position.y + 18, playerGroup.position.z + 14);
+            camera.position.lerp(targetCamPos, 0.08);
+            camera.position.add(cameraOffsetImpulse);
+            cameraOffsetImpulse.lerp(new THREE.Vector3(0,0,0), 0.1);
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+
+            // Enemies Update Loop
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                
+                // Track HP bar facing camera
+                e.hpBar.scale.x = Math.max(0.001, e.hp / e.maxHp);
+                e.hpBar.parent.lookAt(camera.position);
+
+                // Dead check
+                if (e.hp <= 0) {
+                    scene.remove(e.group);
+                    enemyDefeated(e);
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                // AI Pathing toward player
+                const toPlayer = playerGroup.position.clone().sub(e.group.position);
+                toPlayer.y = 0;
+                const dist = toPlayer.length();
+
+                if (dist > 1.4) {
+                    toPlayer.normalize();
+                    e.group.position.addScaledVector(toPlayer, e.speed * delta);
+                    e.group.lookAt(playerGroup.position.x, e.group.position.y, playerGroup.position.z);
+                }
+
+                // Enemy Melee Attack Execution
+                e.attackCooldown -= delta;
+                if (dist <= 1.8 && e.attackCooldown <= 0) {
+                    e.attackCooldown = 1.3;
+                    
+                    if (player.isParrying) {
+                        // Successful Parry Counter!
+                        spawnDamageText("PARRIED!", playerGroup.position, true, "#3498db");
+                        createShockwaveParticle(playerGroup.position, 3.5, 0x3498db);
+                        e.hp -= (player.baseAtk * 2.5);
+                        triggerScreenShake(0.4);
+                    } else if (!player.isInvulnerable) {
+                        // Player takes damage
+                        const rawDmg = e.atk - (player.baseDef + player.equippedArmor.def);
+                        const finalDmg = Math.max(4, rawDmg);
+                        player.hp -= finalDmg;
+                        spawnDamageText(-finalDmg, playerGroup.position, false, "#e74c3c");
+                        triggerScreenShake(0.35);
+                        refreshUI();
+
+                        if (player.hp <= 0) {
+                            alert("You perished in battle! Respawning at hub.");
+                            player.hp = player.maxHp;
+                            playerGroup.position.set(0, 0, 0);
+                            refreshUI();
+                        }
+                    }
+                }
+            }
+
+            // Spawn ambient enemies if population low
+            if (enemies.length < 18) {
+                spawnEnemy();
+            }
+
+            // Particles Animation
+            for(let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.life -= delta;
+                p.mesh.material.opacity = p.life / p.duration;
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    particles.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Window resize support
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize HUD
+        refreshUI();
+        renderInventory();
+        renderSkillSelector();
+
+        // Start Loop
+        animate();
+    </script>
 </body>
 </html>
