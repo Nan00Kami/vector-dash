@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptForge — Dev Cheatsheet & System Prompt Archive</title>
+  <meta name="description" content="Curated collection of production-ready system prompts, JSON output templates, and LLM prompting cheatsheets for engineers and creators." />
+  <meta name="keywords" content="system prompt, prompt engineering, chatgpt prompts, claude prompt library, json schema llm, prompt templates" />
+  
+  <!-- OpenGraph / Social Share Preview -->
+  <meta property="og:title" content="PromptForge — The Developer's System Prompt & Prompt Engineering Library" />
+  <meta property="og:description" content="Production-tested system prompts, code templates, and LLM cheat sheets in one fast, searchable interface." />
+  <meta property="og:type" content="website" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    pre, code { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-[#0b0f17] text-slate-200 min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <header class="border-b border-slate-800 bg-[#0d131f]/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-8 w-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          ⚡
+        </div>
+        <span class="font-bold text-lg text-white tracking-tight">PromptForge</span>
+        <span class="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold bg-cyan-950 text-cyan-400 border border-cyan-800 rounded-full">v1.2 Open Vault</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <a href="https://github.com" target="_blank" class="flex items-center gap-2 text-sm text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 px-3.5 py-1.5 rounded-lg transition-all">
+          <i class="fa-brands fa-github"></i>
+          <span>Star on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="max-w-6xl mx-auto px-4 pt-12 pb-8 text-center">
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 tracking-tight leading-tight">
+      Production-Ready LLM Prompts & Schemas
+    </h1>
+    <p class="mt-4 text-slate-400 max-w-2xl mx-auto text-base sm:text-lg">
+      Stop wasting tokens with fuzzy instructions. Clean, battle-tested system prompts for coding, JSON enforcement, data extraction, and creative game design.
+    </p>
+
+    <!-- Interactive Search Bar -->
+    <div class="mt-8 max-w-xl mx-auto relative">
+      <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500"></i>
+      <input 
+        type="text" 
+        id="search" 
+        placeholder="Filter by keyword (e.g. 'JSON', 'Code Reviewer', 'SQL', 'Game NPC')..." 
+        class="w-full pl-11 pr-4 py-3 bg-[#131b2e] border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all shadow-inner"
+        onkeyup="filterPrompts()"
+      />
+    </div>
+
+    <!-- Filter Badges -->
+    <div class="flex flex-wrap justify-center gap-2 mt-4 text-xs font-medium">
+      <button onclick="setCategory('all')" class="cat-btn px-3 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-200 hover:border-slate-500">All</button>
+      <button onclick="setCategory('engineering')" class="cat-btn px-3 py-1 rounded-full border border-slate-800 bg-[#131b2e] text-slate-400 hover:border-slate-600">Coding & Arch</button>
+      <button onclick="setCategory('data')" class="cat-btn px-3 py-1 rounded-full border border-slate-800 bg-[#131b2e] text-slate-400 hover:border-slate-600">Structured Data</button>
+      <button onclick="setCategory('creative')" class="cat-btn px-3 py-1 rounded-full border border-slate-800 bg-[#131b2e] text-slate-400 hover:border-slate-600">Creative & RPG</button>
+      <button onclick="setCategory('writing')" class="cat-btn px-3 py-1 rounded-full border border-slate-800 bg-[#131b2e] text-slate-400 hover:border-slate-600">Technical Writing</button>
+    </div>
+  </section>
+
+  <!-- Prompt Grid -->
+  <main class="max-w-6xl mx-auto px-4 py-6 flex-grow">
+    <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <!-- Cards dynamically generated via JavaScript -->
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-[#080b12] py-8 text-center text-sm text-slate-500">
+    <p>Free, open-source, and hosted directly on GitHub Pages.</p>
+    <p class="mt-1">Fork the repo, submit pull requests with your best prompts, and deploy your own mirror.</p>
+  </footer>
+
+  <script>
+    const prompts = [
+      {
+        id: "strict-json",
+        title: "Deterministic JSON / Schema Restrictor",
+        category: "data",
+        tag: "Extraction & API",
+        description: "Forces models to strictly reply in validated JSON with zero preamble, conversational filler, or markdown wrap.",
+        prompt: `You are a strict data transformation engine. Your sole output must be a valid RFC 8259 JSON object matching the user-requested schema.
+
+Rules:
+1. Output ONLY pure JSON. Do not include markdown code blocks (\`\`\`json), conversational commentary, introductory notes, or trailing explanations.
+2. If input data contains missing fields, populate them with null rather than omitting the key.
+3. Strings must be cleanly escaped. Ensure integers and booleans preserve appropriate primitive types.`
+      },
+      {
+        id: "senior-code-reviewer",
+        title: "Senior Security & Performance Code Reviewer",
+        category: "engineering",
+        tag: "Engineering",
+        description: "Audits pull requests and snippets for edge cases, memory leaks, Big-O regressions, and security holes.",
+        prompt: `You are an opinionated Principal Software Engineer specializing in security and performance optimization.
+
+When reviewing code:
+1. Categorize findings into: [Critical Vulnerability], [Performance Bottleneck], and [Clean Code / Maintainability].
+2. Calculate time & space complexity (Big-O) for algorithmic logic.
+3. For every flaw you highlight, supply the exact before/after corrected code block with an explanation of why the change fixes the root issue.
+4. Avoid bike-shedding or stylistic nitpicks covered by standard linters.`
+      },
+      {
+        id: "rpg-npc-dialogue",
+        title: "Grounded RPG NPC / World-State Engine",
+        category: "creative",
+        tag: "Game Design",
+        description: "Generates in-character video game dialogues with branching choice trees and quest flags.",
+        prompt: `You are a Dialogue and Quest Scripting Engine for an immersive RPG.
+
+Given a character bio, current quest state, and player disposition:
+- Deliver in-character voice lines with distinct cadence, vocabulary, and emotional inflection.
+- Provide output formatted as:
+  [NPC Line]: Dialogue spoken aloud.
+  [Branch 1 (Friendly)]: Player response option -> [Quest Flag triggered]
+  [Branch 2 (Inquisitive)]: Player response option -> [Lore reveal]
+  [Branch 3 (Hostile / Refusal)]: Player response option -> [Faction relation delta]
+- Keep player options concise and true to classic isometric/tactical RPG formats.`
+      },
+      {
+        id: "sql-optimizer",
+        title: "PostgreSQL & Database Query Optimizer",
+        category: "engineering",
+        tag: "Database",
+        description: "Analyzes slow queries, recommends composite indexes, and suggests query restructuring.",
+        prompt: `You are an expert PostgreSQL Database Administrator.
+
+Analyze the user's SQL query and schema definitions:
+1. Identify missing indexes, unindexed foreign keys, or sequential scans caused by functions on columns.
+2. Rewrite the query to eliminate unnecessary subqueries, joins, or N+1 patterns where applicable.
+3. Output the exact "CREATE INDEX CONCURRENTLY" statements recommended to support the query.
+4. Add an EXPLAIN (ANALYZE, BUFFERS) sanity check checklist.`
+      },
+      {
+        id: "academic-legal-summarizer",
+        title: "Dense Research & Treaty Clause Analyzer",
+        category: "writing",
+        tag: "Research & Law",
+        description: "Breaks down dense academic treatises, international agreements, and legal dispute opinions into crisp briefs.",
+        prompt: `You are an academic legal analyst and dispute brief specialist.
+
+Structure your breakdown into four clean sections:
+1. Procedural Context & Material Facts (2-3 sentences)
+2. Core Legal Question / Issue in Dispute
+3. Governing Principles & Jurisprudential Holdings (Highlight specific articles, treaty provisions, or statutes cited)
+4. Critical Analysis / Practical Implications: Unintended loopholes, ambiguities, or compliance hurdles created by this holding.`
+      },
+      {
+        id: "cli-generator",
+        title: "Idempotent Bash / Zsh Automation Expert",
+        category: "engineering",
+        tag: "DevOps",
+        description: "Creates safe, self-healing shell scripts with robust error handling and pipefail checks.",
+        prompt: `You are a Site Reliability Engineer creating idempotent shell scripts.
+
+Requirements:
+- Begin every script with "set -euo pipefail".
+- Ensure operations are safe to run repeatedly without breaking existing system states.
+- Include explicit exit codes, logging helper functions (INFO, WARN, ERROR), and trap signals on INT/TERM/ERR for graceful cleanup.`
+      }
+    ];
+
+    let currentCategory = 'all';
+
+    function renderPrompts(items) {
+      const grid = document.getElementById('promptsGrid');
+      grid.innerHTML = '';
+
+      if (items.length === 0) {
+        grid.innerHTML = '<div class="col-span-2 text-center py-16 text-slate-500">No prompts matched your search.</div>';
+        return;
+      }
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "bg-[#101726] border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between shadow-sm";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60">${item.tag}</span>
+              <button onclick="copyToClipboard('${item.id}')" id="btn-${item.id}" class="text-xs text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded transition flex items-center gap-1.5 border border-slate-700/60">
+                <i class="fa-regular fa-copy"></i> Copy
+              </button>
+            </div>
+            <h3 class="font-bold text-white text-base">${item.title}</h3>
+            <p class="text-xs text-slate-400 mt-1 mb-3">${item.description}</p>
+            <div class="relative bg-[#090d16] border border-slate-800/80 rounded-lg p-3 text-xs text-slate-300 overflow-x-auto max-h-48 whitespace-pre-wrap font-mono">${item.prompt}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterPrompts() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const filtered = prompts.filter(p => {
+        const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+        const matchesSearch = p.title.toLowerCase().includes(query) || 
+                              p.description.toLowerCase().includes(query) || 
+                              p.prompt.toLowerCase().includes(query) ||
+                              p.tag.toLowerCase().includes(query);
+        return matchesCategory && matchesSearch;
+      });
+      renderPrompts(filtered);
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-slate-200');
+        btn.classList.add('bg-[#131b2e]', 'text-slate-400');
+      });
+      event.target.classList.add('bg-slate-800', 'text-slate-200');
+      filterPrompts();
+    }
+
+    function copyToClipboard(id) {
+      const target = prompts.find(p => p.id === id);
+      if (target) {
+        navigator.clipboard.writeText(target.prompt).then(() => {
+          const btn = document.getElementById(`btn-${id}`);
+          const original = btn.innerHTML;
+          btn.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> Copied!`;
+          btn.classList.add('border-emerald-500/50');
+          setTimeout(() => {
+            btn.innerHTML = original;
+            btn.classList.remove('border-emerald-500/50');
+          }, 2000);
+        });
+      }
+    }
+
+    // Initial load
+    renderPrompts(prompts);
+  </script>
+</body>
+</html>
